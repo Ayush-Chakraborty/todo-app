@@ -1,21 +1,42 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-
+import { StatusBar } from "expo-status-bar";
+import React, { useState, useEffect } from "react";
+import Main from "./App/Main";
+import DataFetchingAnimation from "./App/components/DataFetchingAnimation";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function App() {
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [pendingList, setPendingList] = useState([]);
+  const [completedList, setCompletedList] = useState([]);
+  const loadData = async () => {
+    const pending = [];
+    const complete = [];
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      for (let key of keys) {
+        const item = await AsyncStorage.getItem(key);
+        const data = JSON.parse(item);
+        if (!data.isCompleted) pending.push(data);
+        else complete.push(data);
+        // console.log(data);
+      }
+    } catch (err) {}
+    setPendingList(pending);
+    setCompletedList(complete);
+    setDataLoaded(true);
+  };
+  useEffect(() => {
+    loadData();
+  }, []);
+  if (!dataLoaded) return <DataFetchingAnimation />;
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <StatusBar style="light" />
+      <Main
+        pendingList={pendingList}
+        completedList={completedList}
+        setPendingList={setPendingList}
+        setCompletedList={setCompletedList}
+      />
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
